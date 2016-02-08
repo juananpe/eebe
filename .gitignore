@@ -2,12 +2,16 @@
 .Rhistory
 .Rapp.history
 
+.RData
+.Rprofile
 # Example code in package build process
 *-Ex.R
-
 # RStudio files
 .Rproj.user/
-
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+.Rproj.user
+keys.R
+packrat/lib*/
+App-1.Rproj

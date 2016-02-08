@@ -1,9 +1,8 @@
 library(shiny)
 library(RMySQL)
 
-setwd("~/Dropbox/Public/articulos/cinaic2015/App-1")
-
-con <- dbConnect( MySQL(), user="juanan", password="", db="stack", host="localhost")
+source("keys.R")
+con <- dbConnect( MySQL(), user=login, password=pass, db=database, host=host)
 #info <- dbReadTable(con, "info")
 # dataf <- dbReadTable(con, "dataf")
 res <- dbSendQuery(con, 'SELECT user_id, user_name, max(creputation) as creputation FROM stack.dataf group by user_name')

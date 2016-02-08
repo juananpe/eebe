@@ -3,13 +3,12 @@ library(ggplot2)
 library(RMySQL)
 library(plyr)
 
-# setwd("~/Dropbox/Public/articulos/cinaic2015/App-1")
 source("functions.R")
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-  
-  con <- dbConnect( MySQL(), user="juanan", password="", db="stack", host="localhost")
+  source("keys.R")  
+  con <- dbConnect( MySQL(), user=login, password=pass, db=database, host=host)
   info <- dbReadTable(con, "info")
   medallas <- dbReadTable(con, "medallas")
   dataf <- dbReadTable(con, "dataf")
