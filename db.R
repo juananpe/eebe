@@ -4,7 +4,8 @@ library(sqldf)
 library(plyr)
 library(RMySQL)
 
-con <- dbConnect( MySQL(), user="juanan", password="", db="stack", host="localhost")
+source("keys.R")
+con <- dbConnect( MySQL(), user=login, password=pass, db=database, host=host)
 
 info <- dbReadTable(con, "info")
 
