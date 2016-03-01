@@ -2,14 +2,10 @@
 
    session_start();
 
-// hard-coded for testing purposes
-
-   $obj = new stdClass;
-   $obj->isAdmin = 1;
-   $_SESSION['user-data'] = $obj;
-   $_SESSION['uid'] = 243532;
-
-   header("Location: http://localhost/so/services/admin.php");
+$host  = $_SERVER['HTTP_HOST'];
+$uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+$extra = 'services/admin.php';
+header("Location: http://$host$uri/$extra");
    exit();
 
 

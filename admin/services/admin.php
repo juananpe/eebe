@@ -58,20 +58,24 @@ class Admin {
                     (select DISTINCT fk_group_id from enrolment where role='teacher' and 
                         fk_user_id = %d)";
 		$result = $this->conn->_multipleSelect($sql, $_SESSION['uid']);
-        foreach($result as $key=>$group){
-            array_push($groups, $group);
-        }
-        echo "<form name='groupsForm' action='admin.php' method='post'>";
-        echo "Select your group:";
-        echo "<select name='group'>";
-        foreach($groups as $group){
-            echo "<option value='$group->ID'>$group->name </option>";
-        }
-        echo "</select><p>";
+	if ($result == ''){
+		echo "You haven't created any group yet";
+        } else {
+		foreach($result as $key=>$group){
+		    array_push($groups, $group);
+		}
+		echo "<form name='groupsForm' action='admin.php' method='post'>";
+		echo "Select your group:";
+		echo "<select name='group'>";
+		foreach($groups as $group){
+		    echo "<option value='$group->ID'>$group->name </option>";
+		}
+		echo "</select><p>";
 
-        echo "<input type='hidden' name='action' value='showAddGroupMembers'>";
-        echo "<input type='Submit' value='Show/Add members'>";
-        echo "</form>";
+		echo "<input type='hidden' name='action' value='showAddGroupMembers'>";
+		echo "<input type='Submit' value='Show/Add members'>";
+		echo "</form>";
+	}
         echo "<p><a href='admin.php'>Main menu</a>"; 
     }
 
@@ -87,7 +91,7 @@ class Admin {
     }
 
     public function addNewGroup($name, $description){
-        $sql = "insert into groups set ID='', name='%s', description='%s'";
+        $sql = "insert into groups set name='%s', description='%s', date=NOW()";
         $lastId = $this->conn->_insert($sql, $name, $description);
         $this->assignUserToGroup($_SESSION['uid'], $lastId, "teacher");
  
@@ -102,6 +106,8 @@ class Admin {
         echo "<input type='hidden' name='action' value='addNewGroup'>";
         echo "<input type='Submit' value='Create Group'>";
         echo "</form>";
+        echo "<p><a href='admin.php'>Main menu</a>"; 
+
     }
 
 	public function addUser($login, $dni, $email, $realName, $realSurname){
@@ -143,7 +149,8 @@ class Admin {
 
 		// $res = new stdclass;
 		// $res->user_name	
-            $this->assignUserToGroup($res, $group, $role);
+            $this->addNewUser($res);
+            $this->assignUserToGroup($res->user_id, $group, $role);
             echo "User " . $line . " : " . $res->display_name  . " correctly assigned. <br>\n";
         }
         echo "<form name='showAddUserForm' action='admin.php' method='post'>";
@@ -154,23 +161,28 @@ class Admin {
 		echo "<p><a href='admin.php'>Back to Administration Panel</a>"; 
     }
 
-	public function assignUserToGroup($user, $groupid, $role){
-		$sql = "SELECT max(cast(row_names as unsigned)) as lastrow from info";
-		$row = $this->conn->_singleSelect($sql);
+	public function addNewUser($user){
+	 $sql = "SELECT max(cast(row_names as unsigned)) as lastrow from info";
+		 $row = $this->conn->_singleSelect($sql);
 
-		$sql = "REPLACE INTO info(row_names, user_id, user_name)
+		 $sql = "INSERT INTO info(row_names, user_id, user_name)
 			VALUES ('%d', %d, '%s')";
-		$this->conn->_insert($sql, ($row->lastrow)+1, $user->user_id, $user->display_name);
- 
-		$sql = "REPLACE INTO enrolment(fk_user_id, fk_group_id, role)
+		 $this->conn->_insert($sql, ($row->lastrow)+1, $user->user_id, $user->display_name);
+
+		// error_log("User: " . $user->user_id ."\n", 3, "/tmp/error.log");
+
+	}
+	public function assignUserToGroup($user, $groupid, $role){
+			$sql = "INSERT INTO enrolment(fk_group_id, fk_user_id, role)
 			VALUES (%d, %d, '%s')";
-		$this->conn->_insert($sql, $user->user_id,  $groupid, $role);
+		$this->conn->_insert($sql, $groupid,  $user,  $role);
 	}
 
 	public function showOptions(){
 		echo "<h1> Administration Panel </h1>";
 		echo "<br><a href='?action=showMyGroups'>Show my Groups</a>";
 		echo "<br><a href='?action=showNewGroup'>Add New Group</a>";
+		echo "<br><a href='index.php?action=logout'>Logout</a> ( ".$_SESSION['uid'] .")";
 /*
 		echo "<br><a href='?action=impersonate'>Log in as another user</a>";
 		echo "<br><a href='?action=assign'>Assign User to Group</a>";
@@ -215,14 +227,14 @@ class Admin {
 			array_push($users, $user);
 		}
         echo "<table>";
-        echo "<tr><td>uid</td><td>name</td><td>email</td><td>role</td></tr>";
+        echo "<tr><td>SO uid</td><td>name</td><td>email</td><td>role</td></tr>";
 		foreach($users as $user){
             echo "<tr>";
 
             if ($user->role == 'teacher') $newrole = 'student';
             else $newrole = 'teacher';
 
-			echo "<td>$user->uid</td><td> $user->uname</td><td> $user->email</td><td> <a href='admin.php?action=changeRole&group=$group&user=$user->uid&role=$newrole'>$user->role</a></td>";
+			echo "<td><a href='http://stackoverflow.com/users/$user->uid'>$user->uid</a></td><td> $user->uname</td><td> $user->email</td><td> <a href='admin.php?action=changeRole&group=$group&user=$user->uid&role=$newrole'>$user->role</a></td>";
             echo "</tr>";  
       }
         echo "</table><p><h2>Assign new users to this group</h2>Insert one user_id per line.</h2><br>";
@@ -238,6 +250,16 @@ class Admin {
 
    }	
 
+	public static function goAway(){
+
+		$host  = $_SERVER['HTTP_HOST'];
+		$uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+		$extra = 'index.php';
+		header("Location: http://$host$uri/$extra");
+		   exit();
+
+
+	}
 	public function showUsersAndGroups(){
 
 		$users = array();
@@ -282,9 +304,9 @@ class Admin {
 
 if(php_sapi_name() != 'cli' && !empty($_SERVER['REMOTE_ADDR'])) {
 	$userData = $_SESSION['user-data'];
-        error_log(print_r($_SESSION,1), 3, "/tmp/error.log");
+        // error_log(print_r($_SESSION,1), 3, "/tmp/error.log");
 	if (!$userData->isAdmin)
-		die("Go away!" . print_r($_SESSION ,1));
+		Admin::goAway();
 
 	$admin = new Admin();
 	if (empty($_POST) && empty($_GET)){
