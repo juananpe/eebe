@@ -3,7 +3,7 @@
 .Rapp.history
 
 .RData
-.Rprofile
+# .Rprofile
 # Example code in package build process
 *-Ex.R
 # RStudio files
