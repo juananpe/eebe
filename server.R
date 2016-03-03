@@ -15,13 +15,23 @@ shinyServer(function(input, output, session) {
   dataf$creation_date <- as.POSIXct(dataf$creation_date)
   dataf$reputation_change <- as.integer(dataf$reputation_change)
   dataf <- join(dataf, info, by="user_id")
+  
+  groupRes <- dbSendQuery(con, paste('SELECT user_id, user_name, MAX(creputation) AS creputation, fk_group_id
+                FROM stack.dataf s , enrolment e 
+                      where s.user_id = e.fk_user_id GROUP BY user_name'))
+  dataGroup <- dbFetch(groupRes)
+  dbClearResult(groupRes)
+   
+  listaGroup <- as.list(setNames(dataGroup$user_id, paste(dataGroup$user_name, dataGroup$creputation)))
+  
+  
   dbDisconnect(con)
   
   observe({
   #  query <- parseQueryString(session$clientData$url_search)
   #  if (!is.null(query[['group']])) {
     
-  
+  if (!is.null(input$group_id)){
       # updateSelectInput(session, "group_id", label = "Grupos", choices = c("All"=0, "Juanan"=1,"Mikel"=10), selected =  input$group_id)
       # 
       # res <- dbSendQuery(con, paste('SELECT user_id, user_name, MAX(creputation) AS creputation, fk_group_id
@@ -31,12 +41,14 @@ shinyServer(function(input, output, session) {
       # dbClearResult(res)
       # 
       # lista <- as.list(setNames(dataf$user_id, paste(dataf$user_name, dataf$creputation)))
-      # 
-      # updateCheckboxGroupInput(session, "users", 
-      #                    label = h3("Badges in SO"), 
-      #                    choices = lista, 
-      #                    selected = dataf$user_id)
-   # }
+      
+      print(dataGroup$user_id)
+      print(dataGroup$user_id[dataGroup$fk_group_id == input$group_id])
+      updateCheckboxGroupInput(session, "users", 
+                          label = "Badges in SO", 
+                          choices = listaGroup, 
+                          selected = dataGroup$user_id[dataGroup$fk_group_id == input$group_id])
+    }
   })
   
 output$distPlot <- renderPlot({
