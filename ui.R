@@ -2,10 +2,17 @@ library(shiny)
 library(RMySQL)
 
 source("keys.R")
+
 con <- dbConnect( MySQL(), user=login, password=pass, db=database, host=host)
 #info <- dbReadTable(con, "info")
 # dataf <- dbReadTable(con, "dataf")
-res <- dbSendQuery(con, 'SELECT user_id, user_name, max(creputation) as creputation FROM stack.dataf group by user_name')
+
+grupos <- c(1,10);
+
+res <- dbSendQuery(con, 'SELECT user_id, user_name, MAX(creputation) AS creputation, fk_group_id
+                   FROM stack.dataf s , enrolment e 
+                   where s.user_id = e.fk_user_id 
+                   GROUP BY user_name;')
 dataf <- dbFetch(res)
 dbClearResult(res)
 
@@ -23,7 +30,10 @@ shinyUI(fluidPage(
   sidebarLayout(
     fluidRow(
       column(3,
-             dateRangeInput("dates", label = h3("Date range"),  start = "2015-01-19")),  
+             dateRangeInput("dates", label = h3("Date range"),  start = "2015-01-19"),
+             br(),
+             selectInput('group_id', 'Group', c("All" = 0,"Juanan" = 1,"Mikel" = 10))
+             ),
       column(3,
              checkboxGroupInput("users", 
                                 label = h3("Badges in SO"), 
