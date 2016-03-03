@@ -21,3 +21,8 @@ Try installing:
  
 Finally:
 install.packages('RMySQL', type='source') 
+
+Perhaps you will also need to set this sql_mode in mysql [for disabling only_full_group_by sql mode](http://mysqlserverteam.com/mysql-5-7-only_full_group_by-improved-recognizing-functional-dependencies-enabled-by-default/):
+
+
+set global sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
