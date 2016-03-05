@@ -1,5 +1,20 @@
 # functions.R
 
+# Singleton Connection
+# http://stackoverflow.com/a/24650993/243532
+getConnection <- function() {
+  
+  if (!exists('.connection', where=.GlobalEnv)) {
+    .connection <<- dbConnect( MySQL(), user=login, password=pass, db=database, host=host)
+  } else if (class(try(dbGetQuery(.connection, "SELECT 1"))) == "try-error") {
+    dbDisconnect(.connection)
+    .connection <<- dbConnect( MySQL(), user=login, password=pass, db=database, host=host)
+  }
+  
+  return(.connection)
+}
+
+
 # Multiple plot function
 #
 # ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)

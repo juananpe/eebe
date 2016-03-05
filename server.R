@@ -3,12 +3,11 @@ library(ggplot2)
 library(RMySQL)
 library(plyr)
 
+source("keys.R")  
 source("functions.R")
 
-# Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
-  source("keys.R")  
-  con <- dbConnect( MySQL(), user=login, password=pass, db=database, host=host)
+  con <- getConnection();
   info <- dbReadTable(con, "info")
   medallas <- dbReadTable(con, "medallas")
   dataf <- dbReadTable(con, "dataf")
@@ -24,39 +23,29 @@ shinyServer(function(input, output, session) {
    
   listaGroup <- as.list(setNames(dataGroup$user_id, paste(dataGroup$user_name, dataGroup$creputation)))
   
-  
-  dbDisconnect(con)
-  
   observe({
-  #  query <- parseQueryString(session$clientData$url_search)
-  #  if (!is.null(query[['group']])) {
-    
-  if (!is.null(input$group_id)){
-      # updateSelectInput(session, "group_id", label = "Grupos", choices = c("All"=0, "Juanan"=1,"Mikel"=10), selected =  input$group_id)
-      # 
-      # res <- dbSendQuery(con, paste('SELECT user_id, user_name, MAX(creputation) AS creputation, fk_group_id
-      #              FROM stack.dataf s , enrolment e 
-      #                    where s.user_id = e.fk_user_id and fk_group_id = ', input$group_id ,' GROUP BY user_name;'))
-      # dataf <- dbFetch(res)
-      # dbClearResult(res)
-      # 
-      # lista <- as.list(setNames(dataf$user_id, paste(dataf$user_name, dataf$creputation)))
+      groupId <- parseQueryString(session$clientData$url_search)
+      if ( length(groupId) > 0) {
+        print(paste("groupId:",groupId))
+      } else {
+        groupId = 1
+      }
+    res <- dbSendQuery(con, paste('SELECT user_id, user_name, MAX(creputation) AS creputation, fk_group_id
+                      FROM dataf s , enrolment e 
+                      where s.user_id = e.fk_user_id and e.fk_group_id = ', groupId , '
+                      GROUP BY user_name'))
       
-      print(dataGroup$user_id)
-      print(dataGroup$user_id[dataGroup$fk_group_id == input$group_id])
-      updateCheckboxGroupInput(session, "users", 
-                          label = "Badges in SO", 
-                          choices = listaGroup, 
-                          selected = dataGroup$user_id[dataGroup$fk_group_id == input$group_id])
-    }
+      
+      dataf <- dbFetch(res)
+      lista <- as.list(setNames(dataf$user_id, dataf$user_name))
+
+      updateCheckboxGroupInput(session = session, inputId = "users", 
+                               choices = lista, selected = dataf$user_id ) 
   })
   
 output$distPlot <- renderPlot({
-    #medallas$orden <- ordered( as.factor(medallas$rank), levels = c("bronze", "silver", "gold"))
     medals <- medallas[medallas$user_user_id %in%  input$users,]
     medals$orden <- ordered( as.factor(medals$rank), levels = c("bronze", "silver", "gold"))
-#    medals$usuarios <- input$users
-    # user_display_name
     p1 <- ggplot(medals, aes(x=user_display_name, y=howmany, fill=orden, order=orden)) + geom_bar(stat="identity")  + scale_fill_discrete(breaks=c("bronze","silver","gold"))
     p1 + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -67,4 +56,5 @@ output$distPlot <- renderPlot({
     multiplot(p1,p2,cols=2)
     
   })
+
 })
