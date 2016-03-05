@@ -28,7 +28,7 @@ shinyServer(function(input, output, session) {
       if ( length(groupId) > 0) {
         print(paste("groupId:",groupId))
       } else {
-        groupId = 1
+        groupId = input$group_id
       }
     res <- dbSendQuery(con, paste('SELECT user_id, user_name, MAX(creputation) AS creputation, fk_group_id
                       FROM dataf s , enrolment e 
